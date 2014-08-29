@@ -1,0 +1,11 @@
+﻿@{
+    ViewBag.Title = "Device Manager Home";
+}
+
+<div class="container" style="margin-top: 50px;"data-ng-view></div><!-- The SPA Views go here -->
+
+
+@section scripts {	
+    @Scripts.Render("~/bundles/angular")
+	@Scripts.Render("~/bundles/deviceManager")
+}
