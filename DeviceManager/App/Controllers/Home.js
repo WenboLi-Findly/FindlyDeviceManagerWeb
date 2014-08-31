@@ -1,20 +1,20 @@
 ﻿
 deviceManager.controller('HomeCtrl',
-    ['$scope',
-    function ($scope) {
-        var client = new WindowsAzure.MobileServiceClient('https://mcom-device-list.azure-mobile.net/', 'fevVWOAOauhjDswvLdefrcWMQgUuOi19');
-        var deviceTable = client.getTable('Device');
+    ['$scope', '$http',
+    function ($scope, $http) {
 
         $scope.devices = [];
         $scope.errorMessage = "";
 
         function reload() {
-            var query = deviceTable.where({});
 
-            query.read().then(function (devices) {
-                $scope.devices = devices;
-                $scope.$apply();
-            }, handleError);
+            $http.get('/Home/GetDevices')
+                .success(function (devices, status, headers, config) {
+                    $scope.devices = devices;
+                })
+                .error(function (data, status, headers, config) {
+
+                });
         }
 
         function handleError(error) {

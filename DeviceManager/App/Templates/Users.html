@@ -1,0 +1,74 @@
+﻿
+
+
+<div class="row">
+	<div class="col-sm-3">
+		<h3>Total Users {{users.length}}</h3>
+	
+		<div class="panel panel-primary">
+		  <div class="panel-heading">
+			<h3 class="panel-title">Users</h3>
+		  </div>
+		  <div class="panel-body">
+			<table class="table table-striped table-hover ">
+			  <thead>
+				<tr>
+					<th>User Name</th>				
+				</tr>
+			  </thead>
+			  <tbody>
+				<tr data-ng-repeat="user in users">
+					<td>{{user.Username}}</td>				
+				</tr>
+			  </tbody>
+			</table> 
+		  </div>
+		</div>	
+	</div>
+	<div class="col-sm-9">
+		<h3>Create User</h3>
+		<fieldset>
+        <legend></legend>
+        
+        <div class="form-group">
+            <label class="col-md-4 control-label">UserName</label>
+            <div class="col-md-8">                
+				<input data-ng-model="username" />
+				<span> username shouldn't contain . or empty space.</span>
+            </div>
+			
+        </div>
+                
+        <div class="form-group">
+            <label class="col-md-4 control-label">Password</label>
+            <div class="col-md-8">                  
+                <input data-ng-model="password" type="password"/> <span>at least 7 digits</span>
+            </div>
+            
+        </div>
+
+		<div class="form-group">
+        <label class="col-md-4 control-label">Repeat Password</label>
+        <div class="col-md-8">                  
+                <input data-ng-model="repeatpassword" type="password"/>
+        </div>
+            
+        </div>
+                
+        <div class="form-group">
+            <div class="col-lg-10 col-lg-offset-2">
+                <input type="submit" value="Create"  class="btn btn-default" data-ng-click="createUser()" data-ng-disabled="loading"/>
+            </div>
+        </div>                           
+       
+
+    </fieldset>
+		<div class="message">
+			<p>{{message}}</p>
+		</div>
+    
+
+
+	</div>
+	
+</div>

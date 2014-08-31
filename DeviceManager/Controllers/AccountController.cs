@@ -1,404 +1,428 @@
-﻿//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Transactions;
-//using System.Web.Mvc;
-//using System.Web.Security;
-//using DotNetOpenAuth.AspNet;
-//using Microsoft.Web.WebPages.OAuth;
-//using WebMatrix.WebData;
-//using DeviceManager.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Transactions;
+using System.Web.Mvc;
+using System.Web.Security;
+using DeviceManager.Services;
+using DotNetOpenAuth.AspNet;
+using Microsoft.Web.WebPages.OAuth;
+using WebMatrix.WebData;
+using DeviceManager.Models;
 
-//namespace DeviceManager.Controllers
-//{
-//	[Authorize]
-//	public class AccountController : Controller
-//	{
-//		//
-//		// GET: /Account/Login
+namespace DeviceManager.Controllers
+{
+	[Authorize]
+	public class AccountController : Controller
+	{
+		//
+		// GET: /Account/Login
 
-//		[AllowAnonymous]
-//		public ActionResult Login(string returnUrl)
-//		{
-//			ViewBag.ReturnUrl = returnUrl;
-//			return View();
-//		}
+		[AllowAnonymous]
+		public ActionResult Login(string returnUrl)
+		{
+			ViewBag.ReturnUrl = returnUrl;
+			return View();
+		}
 
-//		//
-//		// POST: /Account/Login
+		//
+		// POST: /Account/Login
 
-//		[HttpPost]
-//		[AllowAnonymous]
-//		[ValidateAntiForgeryToken]
-//		public ActionResult Login(LoginModel model, string returnUrl)
-//		{
-//			if (ModelState.IsValid && WebSecurity.Login(model.UserName, model.Password, persistCookie: model.RememberMe))
-//			{
-//				return RedirectToLocal(returnUrl);
-//			}
+		[HttpPost]
+		[AllowAnonymous]
+		[ValidateAntiForgeryToken]
+		public async Task<ActionResult> Login(LoginModel model, string returnUrl)
+		{
+			if (ModelState.IsValid)
+			{
+				var accountService = new AccountService();
+				var success = await accountService.Login(model.UserName, model.Password);
+				if (success)
+				{
+					FormsAuthentication.SetAuthCookie(model.UserName, model.RememberMe);
+					return RedirectToAction("Index", "Home");
+				}
+				
+			}
 
-//			// If we got this far, something failed, redisplay form
-//			ModelState.AddModelError("", "The user name or password provided is incorrect.");
-//			return View(model);
-//		}
+			// If we got this far, something failed, redisplay form
+			ModelState.AddModelError("", "The user name or password provided is incorrect.");
+			return View(model);
+		}
 
-//		//
-//		// POST: /Account/LogOff
+		//
+		// POST: /Account/LogOff
 
-//		[HttpPost]
-//		[ValidateAntiForgeryToken]
-//		public ActionResult LogOff()
-//		{
-//			WebSecurity.Logout();
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public ActionResult LogOff()
+		{
+			WebSecurity.Logout();
 
-//			return RedirectToAction("Index", "Home");
-//		}
+			return RedirectToAction("Index", "Home");
+		}
 
-//		//
-//		// GET: /Account/Register
+		[AllowAnonymous]
+		[HttpPost]
+		public async Task<ActionResult> JsonLogin(LoginModel model, string returnUrl)
+		{
+			if (ModelState.IsValid)
+			{
+				var accountService = new AccountService();
+				var success = await accountService.Login(model.UserName, model.Password);
 
-//		[AllowAnonymous]
-//		public ActionResult Register()
-//		{
-//			return View();
-//		}
+				if (success)
+				{
+					FormsAuthentication.SetAuthCookie(model.UserName, false);
+				}
+			
+				return RedirectToAction("Index", "Home");
+			}
 
-//		//
-//		// POST: /Account/Register
+			return View(model);
+		}
 
-//		[HttpPost]
-//		[AllowAnonymous]
-//		[ValidateAntiForgeryToken]
-//		public ActionResult Register(RegisterModel model)
-//		{
-//			if (ModelState.IsValid)
-//			{
-//				// Attempt to register the user
-//				try
-//				{
-//					WebSecurity.CreateUserAndAccount(model.UserName, model.Password);
-//					WebSecurity.Login(model.UserName, model.Password);
-//					return RedirectToAction("Index", "Home");
-//				}
-//				catch (MembershipCreateUserException e)
-//				{
-//					ModelState.AddModelError("", ErrorCodeToString(e.StatusCode));
-//				}
-//			}
 
-//			// If we got this far, something failed, redisplay form
-//			return View(model);
-//		}
+		//
+		// GET: /Account/Register
 
-//		//
-//		// POST: /Account/Disassociate
+		[AllowAnonymous]
+		public ActionResult Register()
+		{
+			return View();
+		}
 
-//		[HttpPost]
-//		[ValidateAntiForgeryToken]
-//		public ActionResult Disassociate(string provider, string providerUserId)
-//		{
-//			string ownerAccount = OAuthWebSecurity.GetUserName(provider, providerUserId);
-//			ManageMessageId? message = null;
+		//
+		// POST: /Account/Register
 
-//			// Only disassociate the account if the currently logged in user is the owner
-//			if (ownerAccount == User.Identity.Name)
-//			{
-//				// Use a transaction to prevent the user from deleting their last login credential
-//				using (var scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions { IsolationLevel = IsolationLevel.Serializable }))
-//				{
-//					bool hasLocalAccount = OAuthWebSecurity.HasLocalAccount(WebSecurity.GetUserId(User.Identity.Name));
-//					if (hasLocalAccount || OAuthWebSecurity.GetAccountsFromUserName(User.Identity.Name).Count > 1)
-//					{
-//						OAuthWebSecurity.DeleteAccount(provider, providerUserId);
-//						scope.Complete();
-//						message = ManageMessageId.RemoveLoginSuccess;
-//					}
-//				}
-//			}
+		[HttpPost]
+		[Authorize]		
+		public async Task<ActionResult> Register(RegisterModel model)
+		{
+			if (ModelState.IsValid)
+			{
+					AccountService service = new AccountService();
+					string username = model.UserName;
+					string password = model.Password;
+					await service.Register(username, password, "");
 
-//			return RedirectToAction("Manage", new { Message = message });
-//		}
+					return Json(new { success = true });
+				
+			}
 
-//		//
-//		// GET: /Account/Manage
+			return Json(new { success = false });
+		}
 
-//		public ActionResult Manage(ManageMessageId? message)
-//		{
-//			ViewBag.StatusMessage =
-//				message == ManageMessageId.ChangePasswordSuccess ? "Your password has been changed."
-//				: message == ManageMessageId.SetPasswordSuccess ? "Your password has been set."
-//				: message == ManageMessageId.RemoveLoginSuccess ? "The external login was removed."
-//				: "";
-//			ViewBag.HasLocalPassword = OAuthWebSecurity.HasLocalAccount(WebSecurity.GetUserId(User.Identity.Name));
-//			ViewBag.ReturnUrl = Url.Action("Manage");
-//			return View();
-//		}
+		//
+		// POST: /Account/Disassociate
 
-//		//
-//		// POST: /Account/Manage
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public ActionResult Disassociate(string provider, string providerUserId)
+		{
+			string ownerAccount = OAuthWebSecurity.GetUserName(provider, providerUserId);
+			ManageMessageId? message = null;
 
-//		[HttpPost]
-//		[ValidateAntiForgeryToken]
-//		public ActionResult Manage(LocalPasswordModel model)
-//		{
-//			bool hasLocalAccount = OAuthWebSecurity.HasLocalAccount(WebSecurity.GetUserId(User.Identity.Name));
-//			ViewBag.HasLocalPassword = hasLocalAccount;
-//			ViewBag.ReturnUrl = Url.Action("Manage");
-//			if (hasLocalAccount)
-//			{
-//				if (ModelState.IsValid)
-//				{
-//					// ChangePassword will throw an exception rather than return false in certain failure scenarios.
-//					bool changePasswordSucceeded;
-//					try
-//					{
-//						changePasswordSucceeded = WebSecurity.ChangePassword(User.Identity.Name, model.OldPassword, model.NewPassword);
-//					}
-//					catch (Exception)
-//					{
-//						changePasswordSucceeded = false;
-//					}
+			// Only disassociate the account if the currently logged in user is the owner
+			if (ownerAccount == User.Identity.Name)
+			{
+				// Use a transaction to prevent the user from deleting their last login credential
+				using (var scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions { IsolationLevel = IsolationLevel.Serializable }))
+				{
+					bool hasLocalAccount = OAuthWebSecurity.HasLocalAccount(WebSecurity.GetUserId(User.Identity.Name));
+					if (hasLocalAccount || OAuthWebSecurity.GetAccountsFromUserName(User.Identity.Name).Count > 1)
+					{
+						OAuthWebSecurity.DeleteAccount(provider, providerUserId);
+						scope.Complete();
+						message = ManageMessageId.RemoveLoginSuccess;
+					}
+				}
+			}
 
-//					if (changePasswordSucceeded)
-//					{
-//						return RedirectToAction("Manage", new { Message = ManageMessageId.ChangePasswordSuccess });
-//					}
-//					else
-//					{
-//						ModelState.AddModelError("", "The current password is incorrect or the new password is invalid.");
-//					}
-//				}
-//			}
-//			else
-//			{
-//				// User does not have a local password so remove any validation errors caused by a missing
-//				// OldPassword field
-//				ModelState state = ModelState["OldPassword"];
-//				if (state != null)
-//				{
-//					state.Errors.Clear();
-//				}
+			return RedirectToAction("Manage", new { Message = message });
+		}
 
-//				if (ModelState.IsValid)
-//				{
-//					try
-//					{
-//						WebSecurity.CreateAccount(User.Identity.Name, model.NewPassword);
-//						return RedirectToAction("Manage", new { Message = ManageMessageId.SetPasswordSuccess });
-//					}
-//					catch (Exception)
-//					{
-//						ModelState.AddModelError("", String.Format("Unable to create local account. An account with the name \"{0}\" may already exist.", User.Identity.Name));
-//					}
-//				}
-//			}
+		//
+		// GET: /Account/Manage
 
-//			// If we got this far, something failed, redisplay form
-//			return View(model);
-//		}
+		public ActionResult Manage(ManageMessageId? message)
+		{
+			ViewBag.StatusMessage =
+				message == ManageMessageId.ChangePasswordSuccess ? "Your password has been changed."
+				: message == ManageMessageId.SetPasswordSuccess ? "Your password has been set."
+				: message == ManageMessageId.RemoveLoginSuccess ? "The external login was removed."
+				: "";
+			ViewBag.HasLocalPassword = OAuthWebSecurity.HasLocalAccount(WebSecurity.GetUserId(User.Identity.Name));
+			ViewBag.ReturnUrl = Url.Action("Manage");
+			return View();
+		}
 
-//		//
-//		// POST: /Account/ExternalLogin
+		//
+		// POST: /Account/Manage
 
-//		[HttpPost]
-//		[AllowAnonymous]
-//		[ValidateAntiForgeryToken]
-//		public ActionResult ExternalLogin(string provider, string returnUrl)
-//		{
-//			return new ExternalLoginResult(provider, Url.Action("ExternalLoginCallback", new { ReturnUrl = returnUrl }));
-//		}
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public ActionResult Manage(LocalPasswordModel model)
+		{
+			bool hasLocalAccount = OAuthWebSecurity.HasLocalAccount(WebSecurity.GetUserId(User.Identity.Name));
+			ViewBag.HasLocalPassword = hasLocalAccount;
+			ViewBag.ReturnUrl = Url.Action("Manage");
+			if (hasLocalAccount)
+			{
+				if (ModelState.IsValid)
+				{
+					// ChangePassword will throw an exception rather than return false in certain failure scenarios.
+					bool changePasswordSucceeded;
+					try
+					{
+						changePasswordSucceeded = WebSecurity.ChangePassword(User.Identity.Name, model.OldPassword, model.NewPassword);
+					}
+					catch (Exception)
+					{
+						changePasswordSucceeded = false;
+					}
 
-//		//
-//		// GET: /Account/ExternalLoginCallback
+					if (changePasswordSucceeded)
+					{
+						return RedirectToAction("Manage", new { Message = ManageMessageId.ChangePasswordSuccess });
+					}
+					else
+					{
+						ModelState.AddModelError("", "The current password is incorrect or the new password is invalid.");
+					}
+				}
+			}
+			else
+			{
+				// User does not have a local password so remove any validation errors caused by a missing
+				// OldPassword field
+				ModelState state = ModelState["OldPassword"];
+				if (state != null)
+				{
+					state.Errors.Clear();
+				}
 
-//		[AllowAnonymous]
-//		public ActionResult ExternalLoginCallback(string returnUrl)
-//		{
-//			AuthenticationResult result = OAuthWebSecurity.VerifyAuthentication(Url.Action("ExternalLoginCallback", new { ReturnUrl = returnUrl }));
-//			if (!result.IsSuccessful)
-//			{
-//				return RedirectToAction("ExternalLoginFailure");
-//			}
+				if (ModelState.IsValid)
+				{
+					try
+					{
+						WebSecurity.CreateAccount(User.Identity.Name, model.NewPassword);
+						return RedirectToAction("Manage", new { Message = ManageMessageId.SetPasswordSuccess });
+					}
+					catch (Exception)
+					{
+						ModelState.AddModelError("", String.Format("Unable to create local account. An account with the name \"{0}\" may already exist.", User.Identity.Name));
+					}
+				}
+			}
 
-//			if (OAuthWebSecurity.Login(result.Provider, result.ProviderUserId, createPersistentCookie: false))
-//			{
-//				return RedirectToLocal(returnUrl);
-//			}
+			// If we got this far, something failed, redisplay form
+			return View(model);
+		}
 
-//			if (User.Identity.IsAuthenticated)
-//			{
-//				// If the current user is logged in add the new account
-//				OAuthWebSecurity.CreateOrUpdateAccount(result.Provider, result.ProviderUserId, User.Identity.Name);
-//				return RedirectToLocal(returnUrl);
-//			}
-//			else
-//			{
-//				// User is new, ask for their desired membership name
-//				string loginData = OAuthWebSecurity.SerializeProviderUserId(result.Provider, result.ProviderUserId);
-//				ViewBag.ProviderDisplayName = OAuthWebSecurity.GetOAuthClientData(result.Provider).DisplayName;
-//				ViewBag.ReturnUrl = returnUrl;
-//				return View("ExternalLoginConfirmation", new RegisterExternalLoginModel { UserName = result.UserName, ExternalLoginData = loginData });
-//			}
-//		}
+		//
+		// POST: /Account/ExternalLogin
 
-//		//
-//		// POST: /Account/ExternalLoginConfirmation
+		[HttpPost]
+		[AllowAnonymous]
+		[ValidateAntiForgeryToken]
+		public ActionResult ExternalLogin(string provider, string returnUrl)
+		{
+			return new ExternalLoginResult(provider, Url.Action("ExternalLoginCallback", new { ReturnUrl = returnUrl }));
+		}
 
-//		[HttpPost]
-//		[AllowAnonymous]
-//		[ValidateAntiForgeryToken]
-//		public ActionResult ExternalLoginConfirmation(RegisterExternalLoginModel model, string returnUrl)
-//		{
-//			string provider = null;
-//			string providerUserId = null;
+		//
+		// GET: /Account/ExternalLoginCallback
 
-//			if (User.Identity.IsAuthenticated || !OAuthWebSecurity.TryDeserializeProviderUserId(model.ExternalLoginData, out provider, out providerUserId))
-//			{
-//				return RedirectToAction("Manage");
-//			}
+		[AllowAnonymous]
+		public ActionResult ExternalLoginCallback(string returnUrl)
+		{
+			AuthenticationResult result = OAuthWebSecurity.VerifyAuthentication(Url.Action("ExternalLoginCallback", new { ReturnUrl = returnUrl }));
+			if (!result.IsSuccessful)
+			{
+				return RedirectToAction("ExternalLoginFailure");
+			}
 
-//			if (ModelState.IsValid)
-//			{
-//				// Insert a new user into the database
-//				using (UsersContext db = new UsersContext())
-//				{
-//					UserProfile user = db.UserProfiles.FirstOrDefault(u => u.UserName.ToLower() == model.UserName.ToLower());
-//					// Check if user already exists
-//					if (user == null)
-//					{
-//						// Insert name into the profile table
-//						db.UserProfiles.Add(new UserProfile { UserName = model.UserName });
-//						db.SaveChanges();
+			if (OAuthWebSecurity.Login(result.Provider, result.ProviderUserId, createPersistentCookie: false))
+			{
+				return RedirectToLocal(returnUrl);
+			}
 
-//						OAuthWebSecurity.CreateOrUpdateAccount(provider, providerUserId, model.UserName);
-//						OAuthWebSecurity.Login(provider, providerUserId, createPersistentCookie: false);
+			if (User.Identity.IsAuthenticated)
+			{
+				// If the current user is logged in add the new account
+				OAuthWebSecurity.CreateOrUpdateAccount(result.Provider, result.ProviderUserId, User.Identity.Name);
+				return RedirectToLocal(returnUrl);
+			}
+			else
+			{
+				// User is new, ask for their desired membership name
+				string loginData = OAuthWebSecurity.SerializeProviderUserId(result.Provider, result.ProviderUserId);
+				ViewBag.ProviderDisplayName = OAuthWebSecurity.GetOAuthClientData(result.Provider).DisplayName;
+				ViewBag.ReturnUrl = returnUrl;
+				return View("ExternalLoginConfirmation", new RegisterExternalLoginModel { UserName = result.UserName, ExternalLoginData = loginData });
+			}
+		}
 
-//						return RedirectToLocal(returnUrl);
-//					}
-//					else
-//					{
-//						ModelState.AddModelError("UserName", "User name already exists. Please enter a different user name.");
-//					}
-//				}
-//			}
+		//
+		// POST: /Account/ExternalLoginConfirmation
 
-//			ViewBag.ProviderDisplayName = OAuthWebSecurity.GetOAuthClientData(provider).DisplayName;
-//			ViewBag.ReturnUrl = returnUrl;
-//			return View(model);
-//		}
+		[HttpPost]
+		[AllowAnonymous]
+		[ValidateAntiForgeryToken]
+		public ActionResult ExternalLoginConfirmation(RegisterExternalLoginModel model, string returnUrl)
+		{
+			string provider = null;
+			string providerUserId = null;
 
-//		//
-//		// GET: /Account/ExternalLoginFailure
+			if (User.Identity.IsAuthenticated || !OAuthWebSecurity.TryDeserializeProviderUserId(model.ExternalLoginData, out provider, out providerUserId))
+			{
+				return RedirectToAction("Manage");
+			}
 
-//		[AllowAnonymous]
-//		public ActionResult ExternalLoginFailure()
-//		{
-//			return View();
-//		}
+			if (ModelState.IsValid)
+			{
+				// Insert a new user into the database
+				using (UsersContext db = new UsersContext())
+				{
+					UserProfile user = db.UserProfiles.FirstOrDefault(u => u.UserName.ToLower() == model.UserName.ToLower());
+					// Check if user already exists
+					if (user == null)
+					{
+						// Insert name into the profile table
+						db.UserProfiles.Add(new UserProfile { UserName = model.UserName });
+						db.SaveChanges();
 
-//		[AllowAnonymous]
-//		[ChildActionOnly]
-//		public ActionResult ExternalLoginsList(string returnUrl)
-//		{
-//			ViewBag.ReturnUrl = returnUrl;
-//			return PartialView("_ExternalLoginsListPartial", OAuthWebSecurity.RegisteredClientData);
-//		}
+						OAuthWebSecurity.CreateOrUpdateAccount(provider, providerUserId, model.UserName);
+						OAuthWebSecurity.Login(provider, providerUserId, createPersistentCookie: false);
 
-//		[ChildActionOnly]
-//		public ActionResult RemoveExternalLogins()
-//		{
-//			ICollection<OAuthAccount> accounts = OAuthWebSecurity.GetAccountsFromUserName(User.Identity.Name);
-//			List<ExternalLogin> externalLogins = new List<ExternalLogin>();
-//			foreach (OAuthAccount account in accounts)
-//			{
-//				AuthenticationClientData clientData = OAuthWebSecurity.GetOAuthClientData(account.Provider);
+						return RedirectToLocal(returnUrl);
+					}
+					else
+					{
+						ModelState.AddModelError("UserName", "User name already exists. Please enter a different user name.");
+					}
+				}
+			}
 
-//				externalLogins.Add(new ExternalLogin
-//				{
-//					Provider = account.Provider,
-//					ProviderDisplayName = clientData.DisplayName,
-//					ProviderUserId = account.ProviderUserId,
-//				});
-//			}
+			ViewBag.ProviderDisplayName = OAuthWebSecurity.GetOAuthClientData(provider).DisplayName;
+			ViewBag.ReturnUrl = returnUrl;
+			return View(model);
+		}
 
-//			ViewBag.ShowRemoveButton = externalLogins.Count > 1 || OAuthWebSecurity.HasLocalAccount(WebSecurity.GetUserId(User.Identity.Name));
-//			return PartialView("_RemoveExternalLoginsPartial", externalLogins);
-//		}
+		//
+		// GET: /Account/ExternalLoginFailure
 
-//		#region Helpers
-//		private ActionResult RedirectToLocal(string returnUrl)
-//		{
-//			if (Url.IsLocalUrl(returnUrl))
-//			{
-//				return Redirect(returnUrl);
-//			}
-//			else
-//			{
-//				return RedirectToAction("Index", "Home");
-//			}
-//		}
+		[AllowAnonymous]
+		public ActionResult ExternalLoginFailure()
+		{
+			return View();
+		}
 
-//		public enum ManageMessageId
-//		{
-//			ChangePasswordSuccess,
-//			SetPasswordSuccess,
-//			RemoveLoginSuccess,
-//		}
+		[AllowAnonymous]
+		[ChildActionOnly]
+		public ActionResult ExternalLoginsList(string returnUrl)
+		{
+			ViewBag.ReturnUrl = returnUrl;
+			return PartialView("_ExternalLoginsListPartial", OAuthWebSecurity.RegisteredClientData);
+		}
 
-//		internal class ExternalLoginResult : ActionResult
-//		{
-//			public ExternalLoginResult(string provider, string returnUrl)
-//			{
-//				Provider = provider;
-//				ReturnUrl = returnUrl;
-//			}
+		[ChildActionOnly]
+		public ActionResult RemoveExternalLogins()
+		{
+			ICollection<OAuthAccount> accounts = OAuthWebSecurity.GetAccountsFromUserName(User.Identity.Name);
+			List<ExternalLogin> externalLogins = new List<ExternalLogin>();
+			foreach (OAuthAccount account in accounts)
+			{
+				AuthenticationClientData clientData = OAuthWebSecurity.GetOAuthClientData(account.Provider);
 
-//			public string Provider { get; private set; }
-//			public string ReturnUrl { get; private set; }
+				externalLogins.Add(new ExternalLogin
+				{
+					Provider = account.Provider,
+					ProviderDisplayName = clientData.DisplayName,
+					ProviderUserId = account.ProviderUserId,
+				});
+			}
 
-//			public override void ExecuteResult(ControllerContext context)
-//			{
-//				OAuthWebSecurity.RequestAuthentication(Provider, ReturnUrl);
-//			}
-//		}
+			ViewBag.ShowRemoveButton = externalLogins.Count > 1 || OAuthWebSecurity.HasLocalAccount(WebSecurity.GetUserId(User.Identity.Name));
+			return PartialView("_RemoveExternalLoginsPartial", externalLogins);
+		}
 
-//		private static string ErrorCodeToString(MembershipCreateStatus createStatus)
-//		{
-//			// See http://go.microsoft.com/fwlink/?LinkID=177550 for
-//			// a full list of status codes.
-//			switch (createStatus)
-//			{
-//				case MembershipCreateStatus.DuplicateUserName:
-//					return "User name already exists. Please enter a different user name.";
+		#region Helpers
+		private ActionResult RedirectToLocal(string returnUrl)
+		{
+			if (Url.IsLocalUrl(returnUrl))
+			{
+				return Redirect(returnUrl);
+			}
+			else
+			{
+				return RedirectToAction("Index", "Home");
+			}
+		}
 
-//				case MembershipCreateStatus.DuplicateEmail:
-//					return "A user name for that e-mail address already exists. Please enter a different e-mail address.";
+		public enum ManageMessageId
+		{
+			ChangePasswordSuccess,
+			SetPasswordSuccess,
+			RemoveLoginSuccess,
+		}
 
-//				case MembershipCreateStatus.InvalidPassword:
-//					return "The password provided is invalid. Please enter a valid password value.";
+		internal class ExternalLoginResult : ActionResult
+		{
+			public ExternalLoginResult(string provider, string returnUrl)
+			{
+				Provider = provider;
+				ReturnUrl = returnUrl;
+			}
 
-//				case MembershipCreateStatus.InvalidEmail:
-//					return "The e-mail address provided is invalid. Please check the value and try again.";
+			public string Provider { get; private set; }
+			public string ReturnUrl { get; private set; }
 
-//				case MembershipCreateStatus.InvalidAnswer:
-//					return "The password retrieval answer provided is invalid. Please check the value and try again.";
+			public override void ExecuteResult(ControllerContext context)
+			{
+				OAuthWebSecurity.RequestAuthentication(Provider, ReturnUrl);
+			}
+		}
 
-//				case MembershipCreateStatus.InvalidQuestion:
-//					return "The password retrieval question provided is invalid. Please check the value and try again.";
+		private static string ErrorCodeToString(MembershipCreateStatus createStatus)
+		{
+			// See http://go.microsoft.com/fwlink/?LinkID=177550 for
+			// a full list of status codes.
+			switch (createStatus)
+			{
+				case MembershipCreateStatus.DuplicateUserName:
+					return "User name already exists. Please enter a different user name.";
 
-//				case MembershipCreateStatus.InvalidUserName:
-//					return "The user name provided is invalid. Please check the value and try again.";
+				case MembershipCreateStatus.DuplicateEmail:
+					return "A user name for that e-mail address already exists. Please enter a different e-mail address.";
 
-//				case MembershipCreateStatus.ProviderError:
-//					return "The authentication provider returned an error. Please verify your entry and try again. If the problem persists, please contact your system administrator.";
+				case MembershipCreateStatus.InvalidPassword:
+					return "The password provided is invalid. Please enter a valid password value.";
 
-//				case MembershipCreateStatus.UserRejected:
-//					return "The user creation request has been canceled. Please verify your entry and try again. If the problem persists, please contact your system administrator.";
+				case MembershipCreateStatus.InvalidEmail:
+					return "The e-mail address provided is invalid. Please check the value and try again.";
 
-//				default:
-//					return "An unknown error occurred. Please verify your entry and try again. If the problem persists, please contact your system administrator.";
-//			}
-//		}
-//		#endregion
-//	}
-//}
+				case MembershipCreateStatus.InvalidAnswer:
+					return "The password retrieval answer provided is invalid. Please check the value and try again.";
+
+				case MembershipCreateStatus.InvalidQuestion:
+					return "The password retrieval question provided is invalid. Please check the value and try again.";
+
+				case MembershipCreateStatus.InvalidUserName:
+					return "The user name provided is invalid. Please check the value and try again.";
+
+				case MembershipCreateStatus.ProviderError:
+					return "The authentication provider returned an error. Please verify your entry and try again. If the problem persists, please contact your system administrator.";
+
+				case MembershipCreateStatus.UserRejected:
+					return "The user creation request has been canceled. Please verify your entry and try again. If the problem persists, please contact your system administrator.";
+
+				default:
+					return "An unknown error occurred. Please verify your entry and try again. If the problem persists, please contact your system administrator.";
+			}
+		}
+		#endregion
+	}
+}
