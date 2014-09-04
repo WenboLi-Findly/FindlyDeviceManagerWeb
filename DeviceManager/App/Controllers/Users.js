@@ -1,5 +1,5 @@
 ﻿
-deviceManager.controller('UsersCtrl',
+deviceManager.register.controller('UsersCtrl',
     ['$scope', '$http',
     function ($scope, $http) {
 

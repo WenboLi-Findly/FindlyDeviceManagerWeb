@@ -13,12 +13,10 @@ namespace DeviceManager
 
 			bundles.Add(new ScriptBundle("~/bundles/angular").Include(
 						"~/Scripts/angular.js",
-						"~/Scripts/angular-route.js"));
+						"~/Scripts/angular-ui-router.js"));
 
 			bundles.Add(new ScriptBundle("~/bundles/deviceManager").Include(
-			"~/App/Main.js",
-			"~/App/Controllers/Home.js",
-			"~/App/Controllers/Users.js"));
+			"~/App/Main.js"));
 
 			// Use the development version of Modernizr to develop with and learn from. Then, when you're
 			// ready for production, use the build tool at http://modernizr.com to pick only the tests you need.

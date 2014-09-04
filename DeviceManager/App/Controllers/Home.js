@@ -1,5 +1,5 @@
 ﻿
-deviceManager.controller('HomeCtrl',
+deviceManager.register.controller('HomeCtrl',
     ['$scope', '$http',
     function ($scope, $http) {
 
@@ -23,6 +23,8 @@ deviceManager.controller('HomeCtrl',
         }
 
         reload();
+
+        var a = "sfsdfsd";
 
 
     }]);
