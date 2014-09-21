@@ -5,7 +5,10 @@
 			<div class="navbar navbar-default navbar-fixed-top">
 				<div class="container">
 					<div class="navbar-header">
-						<a ui-sref="home" class="navbar-brand">Findly Device Manager</a>
+						<a ui-sref="home" class="navbar-brand logolink">
+							<img id="logo-header" src="~/Content/deviceFinder_launcher.png" class="logo" alt="Logo">
+							Device Finder
+						</a>
 						<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
 							<span class="icon-bar"></span>
 							<span class="icon-bar"></span>
@@ -16,14 +19,19 @@
 					<ul class="nav navbar-nav">    
 
 							<li>
-								<a ui-sref="users" >Create User</a>
-							</li>           
-						
+								<a ui-sref="users" >
+									<span class="glyphicon glyphicon-user">
+									</span> Create User</a>
+							</li>  
+							<li>
+								<a href="#" onclick="logoff()" >
+									<span class="glyphicon glyphicon-off">
+									</span> Log off</a>
+							</li>           						
 					</ul>
 					</div>
 				</div>
 			</div>
-
 @if (ViewBag.Authorized)
 {
 	<div class="container" style="margin-top: 50px;"ui-view></div><!-- The SPA Views go here -->
@@ -51,4 +59,13 @@
 @section scripts {	
     @Scripts.Render("~/bundles/angular")
 	@Scripts.Render("~/bundles/deviceManager")
+	<script type="text/javascript">
+		
+	function logoff() {
+		$.post("/Account/LogOff", null, function () {
+			location.reload();
+		});
+	}	
+	</script>
 }
+

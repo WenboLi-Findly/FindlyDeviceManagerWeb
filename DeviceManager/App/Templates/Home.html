@@ -22,6 +22,7 @@
 				<th>Team</th>
 				<th>User</th>
 				<th>Device Id</th>
+				<th></th>
 			</tr>
 		  </thead>
 		  <tbody>
@@ -36,6 +37,7 @@
 				<td>{{device.team}}</td>
 				<td>{{device.user}}</td>
 				<td>{{device.device_id}}</td>
+				<td><button type="button" class="btn btn-sm btn-default" ng-click="sendMessage(device)">Message</button></td>
 			</tr>
 		  </tbody>
 		</table> 

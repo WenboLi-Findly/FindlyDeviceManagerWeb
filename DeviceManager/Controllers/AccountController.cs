@@ -40,7 +40,7 @@ namespace DeviceManager.Controllers
 				var success = await accountService.Login(model.UserName, model.Password);
 				if (success)
 				{
-					FormsAuthentication.SetAuthCookie(model.UserName, model.RememberMe);
+					FormsAuthentication.SetAuthCookie(model.UserName, model.RememberMe);					
 					return RedirectToAction("Index", "Home");
 				}
 				
@@ -50,17 +50,11 @@ namespace DeviceManager.Controllers
 			ModelState.AddModelError("", "The user name or password provided is incorrect.");
 			return View(model);
 		}
-
-		//
-		// POST: /Account/LogOff
-
 		[HttpPost]
-		[ValidateAntiForgeryToken]
 		public ActionResult LogOff()
 		{
-			WebSecurity.Logout();
-
-			return RedirectToAction("Index", "Home");
+			FormsAuthentication.SignOut();
+			return Json(new { success = true});
 		}
 
 		[AllowAnonymous]

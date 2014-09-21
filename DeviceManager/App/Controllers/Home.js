@@ -24,7 +24,31 @@ deviceManager.register.controller('HomeCtrl',
 
         reload();
 
-        var a = "sfsdfsd";
+        
 
+        $scope.sendMessage= function(device) {
+            bootbox.prompt("Message details", function (result) {
+                if (result === null) {
+                    
+                } else {
+                    var client = new WindowsAzure.MobileServiceClient('https://mcom-device-list.azure-mobile.net/', 'fevVWOAOauhjDswvLdefrcWMQgUuOi19');
+
+                    // Asynchronously call the custom API using the POST method.
+                    client.invokeApi("sendmessage", {
+                        body: {
+                            Message: result,
+                            OS: device.os.toLowerCase(),
+                            PushId: device.push_id
+                        },
+                        method: "post"
+                    }).done(function (results) {
+                        bootbox.alert("Message sent.");
+                    }, function (error) {
+                        alert(error.message);
+                    });
+                }
+            });
+        }
+        
 
     }]);

@@ -13,7 +13,9 @@ namespace DeviceManager
 
 			bundles.Add(new ScriptBundle("~/bundles/angular").Include(
 						"~/Scripts/angular.js",
-						"~/Scripts/angular-ui-router.js"));
+						"~/Scripts/angular-ui-router.js",
+						"~/Scripts/bootstrap.js",
+						"~/Scripts/bootbox.js"));
 
 			bundles.Add(new ScriptBundle("~/bundles/deviceManager").Include(
 			"~/App/Main.js"));
@@ -23,8 +25,8 @@ namespace DeviceManager
 			bundles.Add(new ScriptBundle("~/bundles/modernizr").Include(
 						"~/Scripts/modernizr-*"));
 
-			bundles.Add(new StyleBundle("~/Content/css").Include("~/Content/site.css",
-																 "~/Content/bootstrap.css"));
+			bundles.Add(new StyleBundle("~/Content/css").Include("~/Content/bootstrap.css",
+																 "~/Content/site.css"));
 		}
 	}
 }
